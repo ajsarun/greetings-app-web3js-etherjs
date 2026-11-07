@@ -27,7 +27,7 @@ Then open one of these pages:
 - ethers.js: <http://localhost:8000/etherjs/app.html>
 - web3.js: <http://localhost:8000/web3js/app.html>
 
-To use a different port, run `./serve.sh 3000`.
+To use a different port, run `./server.sh 3000`.
 
 Don't open `app.html` directly from disk. MetaMask does not work on `file://` pages by default, so the app needs a web server.
 

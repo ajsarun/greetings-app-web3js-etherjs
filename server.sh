@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Serve the Greeting App over HTTP. MetaMask does not work on file:// pages by default.
-# Usage: ./serve.sh [port]   (default port: 8000)
+# Usage: ./server.sh [port]   (default port: 8000)
 set -euo pipefail
 
 PORT="${1:-8000}"
