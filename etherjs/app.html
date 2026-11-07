@@ -1,0 +1,157 @@
+<html>
+  <head>
+    <script type="module">
+      //import { ethers } from "./ethers.min.js"
+      import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js"
+      window.ethers = ethers //set it as global variables 
+  </script>
+    <script>
+      const contract_address = "0xb632F2d22DA874b994fc81E0bd70B6F503D94071"
+      const SEPOLIA_CHAIN_ID = "0xaa36a7"
+      const abi = 
+      [
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_newMessage",
+				"type": "string"
+			}
+		],
+		"name": "setMessage",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_initialMessage",
+				"type": "string"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "_message",
+				"type": "string"
+			}
+		],
+		"name": "SetMessage",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "message",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+  
+   window.addEventListener('load', async () => {
+            //connect directly without metamask
+            //provider = new ethers.JsonRpcProvider('http://localhost:8545')
+            //accounts = await provider.listAccounts()
+            //signer = await provider.getSigner()
+
+            //greetings = await new web3.eth.Contract(abi, contract_address);
+  
+            //connect using metamask
+            if(typeof(window.ethereum) === 'undefined') {
+                alert("Metamask is not installed, you cannot use this app")
+            }
+            else {
+                //ethers' provider fails with "network changed" after a switch, so start over
+                window.ethereum.on('chainChanged', () => window.location.reload())
+                try {
+                  const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+                  if (chainId !== SEPOLIA_CHAIN_ID) {
+                    document.getElementById("status").textContent = "Please switch MetaMask to the Sepolia network"
+                    return
+                  }
+                  provider = new ethers.BrowserProvider(window.ethereum)
+                  signer = await provider.getSigner()
+                  accounts = await provider.listAccounts()
+                  //accounts = await window.ethereum.request({ method: 'eth_requestAccounts', });      
+                  greetings = await new ethers.Contract(contract_address, abi, provider);
+                  const eventName = "SetMessage";
+                  greetings.on(eventName, (_message) => {
+                    document.getElementById("message").textContent = _message
+                  })
+                }
+                catch (error) {
+                  document.getElementById("status").textContent =
+                    "Could not connect to MetaMask: " + (error.shortMessage || error.message)
+                }
+                //greetings = await new ethers.Contract(contract_address, abi, signer);
+                /*const event = greetings.events.SetMessage()
+                event.on('data', (event) => {
+                  document.getElementById("message").innerHTML = event.returnValues._message
+                })*/ 
+            }
+
+      });
+
+      const isConnected = () => {
+        if (typeof greetings !== 'undefined') return true
+        document.getElementById("status").textContent =
+          "Not connected: approve MetaMask on the Sepolia network (reload this page to try again)";
+        return false
+      };
+
+      const setMessage = async () => {
+        if (!isConnected()) return
+        message = document.getElementById("newMessage").value;
+        document.getElementById("status").innerHTML =
+          "Please wait for processing your request";
+          try {
+            signer = await provider.getSigner()
+            greetingsWithSigner = await new ethers.Contract(contract_address, abi, signer);
+            const receipt = await greetingsWithSigner.setMessage(message)
+            await receipt.wait()
+            document.getElementById("status").innerHTML = "your message is set";
+          }
+          catch (error) {
+            document.getElementById("status").textContent = error;
+          }
+      };
+      const getMessage = async () => {
+        if (!isConnected()) return
+        try {
+          message = await greetings.message()
+          document.getElementById("message").textContent = message;
+        }
+        catch (error) {
+          document.getElementById("status").textContent =
+            "Could not read the message: " + (error.shortMessage || error.message)
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <h2>Greeting App</h2>
+    <label>Enter Message</label>
+    <input type="text" id="newMessage" />
+    <button type="button" onclick="setMessage()">Set Message</button>
+    <button type="button" onclick="getMessage()">Get Message</button>
+    <hr />
+    <div id="status"></div>
+    <hr />
+    <div id="message"></div>
+    <br />
+  </body>
+</html>

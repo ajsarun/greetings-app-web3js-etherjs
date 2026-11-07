@@ -1,0 +1,147 @@
+<html>
+  <head>
+    <!--script src="web3.min.js"></script-->
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js"></script>
+    <script>
+      const contract_address = "0xb632F2d22DA874b994fc81E0bd70B6F503D94071"
+      const SEPOLIA_CHAIN_ID = "0xaa36a7"
+
+      const abi = 
+      [
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_newMessage",
+				"type": "string"
+			}
+		],
+		"name": "setMessage",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_initialMessage",
+				"type": "string"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "_message",
+				"type": "string"
+			}
+		],
+		"name": "SetMessage",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "message",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+   //let accounts;
+   window.addEventListener('load', async () => {
+            //connect directly without metamask
+            //var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+            //accounts = await web3.eth.getAccounts();
+            //greetings = await new web3.eth.Contract(abi, contract_address);
+  
+            //connect using metamask
+            if(typeof(window.ethereum) === 'undefined') {
+                alert("Metamask is not installed, you cannot use this app")
+            }
+            else {
+                window.ethereum.on('chainChanged', () => window.location.reload())
+                try {
+                  const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+                  if (chainId !== SEPOLIA_CHAIN_ID) {
+                    document.getElementById("status").textContent = "Please switch MetaMask to the Sepolia network"
+                    return
+                  }
+                  web3 = new Web3(window.ethereum);
+                  //window.ethereum.enable(); //deprecated
+                  //accounts = await web3.eth.getAccounts();
+                  accounts = await window.ethereum.request({ method: 'eth_requestAccounts', });      
+                  greetings = await new web3.eth.Contract(abi, contract_address);
+                  const event = greetings.events.SetMessage()
+                  event.on('data', (event) => {
+                    document.getElementById("message").textContent = event.returnValues._message
+                  }) 
+                }
+                catch (error) {
+                  document.getElementById("status").textContent =
+                    "Could not connect to MetaMask: " + error.message
+                }
+            }
+
+      });
+
+      const isConnected = () => {
+        if (typeof greetings !== 'undefined') return true
+        document.getElementById("status").textContent =
+          "Not connected: approve MetaMask on the Sepolia network (reload this page to try again)";
+        return false
+      };
+
+      const setMessage = async () => {
+        if (!isConnected()) return
+        message = document.getElementById("newMessage").value;
+        document.getElementById("status").innerHTML =
+          "Please wait for processing your request";
+          try {
+            accounts = await web3.eth.getAccounts()
+            const receipt = await greetings.methods
+              .setMessage(message)
+              .send({from: accounts[0]});
+            document.getElementById("status").innerHTML = "your message is set";
+          }
+          catch (error) {
+            document.getElementById("status").textContent = error;
+          }
+      };
+      const getMessage = async () => {
+        if (!isConnected()) return
+        try {
+          message = await greetings.methods.message().call();
+          document.getElementById("message").textContent = message;
+        }
+        catch (error) {
+          document.getElementById("status").textContent =
+            "Could not read the message: " + error.message
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <h2>Greeting App</h2>
+    <label>Enter Message</label>
+    <input type="text" id="newMessage" />
+    <button type="button" onclick="setMessage()">Set Message</button>
+    <button type="button" onclick="getMessage()">Get Message</button>
+    <hr />
+    <div id="status"></div>
+    <hr />
+    <div id="message"></div>
+    <br />
+  </body>
+</html>
