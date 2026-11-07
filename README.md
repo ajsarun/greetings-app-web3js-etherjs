@@ -19,7 +19,7 @@ Both apps use the contract at [`0xb632F2d22DA874b994fc81E0bd70B6F503D94071`](htt
 ## Run locally
 
 ```bash
-./serve.sh
+./server.sh
 ```
 
 Then open one of these pages:
@@ -37,7 +37,7 @@ Don't open `app.html` directly from disk. MetaMask does not work on `file://` pa
 2. In the codespace terminal, run:
 
    ```bash
-   ./serve.sh
+   ./server.sh
    ```
 
    The script prints the forwarded URLs for both apps.
